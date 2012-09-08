@@ -1,9 +1,9 @@
 from collections import defaultdict
-#from ordereddict import OrderedDict
+import clint
+from clint.textui import puts, indent, colored
+from BeautifulSoup import BeautifulSoup
 import mechanize
 from tablib import Dataset
-from BeautifulSoup import BeautifulSoup
-from clint.textui import puts, indent, colored
 
 debug = False
 local_browser = mechanize.Browser()
@@ -29,6 +29,7 @@ def sub_dict():
 
 def fetch_all_timetables(browser):
     # Fetch the homepage for capemetro, and click the Timetables link
+    if debug: puts("Fetching timetable links")
     tables = defaultdict(sub_dict)
     browser.open(base_url)
     timetables = browser.follow_link(text="Timetables")
@@ -54,6 +55,7 @@ def fetch_all_timetables(browser):
 
 def fetch_timetable(browser, link):
     # Utility method to return a nice Dataset from a timetable url
+    if debug: puts("Fetching timetable from %s" % link)
     response = browser.follow_link(link)
     soup = BeautifulSoup(response.read())
     table = soup.find('table')
@@ -75,6 +77,7 @@ def fetch_timetable(browser, link):
     data = Dataset()
     data.headers=train_nums[1]
     for place, times in timetable[1:]:
+        if debug: puts(repr((place,times)))
         data.rpush(times,tags=[place.title().replace('`S',"'s")]) 
 
     #Strip out TRAIN NO. columns
@@ -87,10 +90,22 @@ def fetch_timetable(browser, link):
     return data
 
 if __name__ == '__main__':
+    if '--debug' in clint.args.grouped:
+        debug=True
+    zone = clint.args.grouped.get('--zone',['South'])[0]
+    start = clint.args.grouped.get('--from',['ST'])[0]
+    finish = clint.args.grouped.get('--to',['CT'])[0]
+    period = clint.args.grouped.get('--period',['MonFri'])[0]
+    station = clint.args.grouped.get('--station',['Fish Hoek'])[0]
+    puts('Zone: '+zone)
+    puts('Service line: %s to %s' % (area_nicename.get(start,start),area_nicename.get(finish,finish)))
+    puts('Time: '+period_nicename[period])
     timetables = fetch_all_timetables(local_browser)
-    timetable = fetch_timetable(local_browser, timetables['South'][('ST','CT')]['MonFri'])
-    puts('Timetable for Fish Hoek:')
+    timetable = fetch_timetable(local_browser, timetables[zone][(start,finish)][period])
     with indent(2):
-        for train, time in timetable.filter('Fish Hoek').dict[0].items():
-            puts('%s: %s' % (train,time))
+        puts('Station: '+station)
+        with indent(2):
+            for train, time in timetable.filter(station).dict[0].items():
+                if train and time:
+                    puts('%s: %s' % (train,time))
         

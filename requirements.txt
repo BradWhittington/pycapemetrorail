@@ -2,4 +2,3 @@ mechanize==0.2.5
 clint
 BeautifulSoup==3.2.1
 tablib
-ordereddict
