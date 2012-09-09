@@ -1,4 +1,4 @@
 mechanize==0.2.5
-clint
+clint==0.3.1
 BeautifulSoup==3.2.1
-tablib
+tablib==0.9.11
