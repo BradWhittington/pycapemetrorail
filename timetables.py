@@ -1,3 +1,4 @@
+import datetime
 from collections import defaultdict
 import clint
 from clint.textui import puts, indent
@@ -79,6 +80,14 @@ def fetch_timetable(browser, link):
                 value = col.getText()
                 if value == '&nbsp;':
                     value = None
+                if isinstance(value, basestring) and ':' in value:
+                    try:
+                        time = value.strip().split(':')
+                        time = datetime.time(*[int(s) for s in time])
+                    except:
+                        pass
+                    else:
+                        value = time
                 values.append(value)
             timetable.append((title, values))
 
@@ -127,6 +136,7 @@ if __name__ == '__main__':
     finish = clint.args.grouped.get('--to', ['CT'])[0]
     period = clint.args.grouped.get('--period', ['MonFri'])[0]
     station = clint.args.grouped.get('--station', ['Fish Hoek'])[0]
+    time_window = int(clint.args.grouped.get('--window', [60])[0])
     puts('Zone: ' + zone)
     puts('Service line: %s to %s' % (
         area_nicename.get(start, start),
@@ -134,9 +144,18 @@ if __name__ == '__main__':
     puts('Time: ' + period_nicename[period])
 
     data = timetable(zone=zone, start=start, finish=finish, period=period)
+    today = datetime.date.today().timetuple()[:3]
+    now = datetime.datetime.now()
     with indent(2):
         puts('Station: ' + station)
         with indent(2):
             for train, time in data.filter(station).dict[0].items():
                 if train and time:
-                    puts('%s: %s' % (train, time))
+                    notes = ''
+                    time_tuple = today + (time.hour, time.minute)
+                    local_time = datetime.datetime(*time_tuple)
+                    if local_time > now:
+                        minutes = (local_time - now).seconds / 60
+                        if minutes < 60:
+                            notes = "* leaving in %s minutes" % minutes
+                    puts('%s: %s %s' % (train, time, notes))
