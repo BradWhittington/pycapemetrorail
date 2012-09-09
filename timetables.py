@@ -100,6 +100,25 @@ def fetch_timetable(browser, link):
     return data
 
 
+def timetable(zone, start, finish, period, browser=None, link=None):
+    """
+    Return a timetable for the specified zone, start_station, end_station and
+    period
+
+    :param zone: String representing a rail area/zone
+    :param start_station: String representing a departure station
+    :param finish_station: String represeting a arrival station
+    :param browser: (optional) `Mechanize.browser` instance
+    :param link: (optional) String representing a timetable HTML page
+    """
+    if browser is None:
+        browser = mechanize.Browser()
+    if link is None:
+        timetables = fetch_all_timetables(browser)
+        link = timetables[zone][(start, finish)][period]
+    return fetch_timetable(browser, link)
+
+
 if __name__ == '__main__':
     if '--debug' in clint.args.grouped:
         debug = True
@@ -113,12 +132,11 @@ if __name__ == '__main__':
         area_nicename.get(start, start),
         area_nicename.get(finish, finish)))
     puts('Time: ' + period_nicename[period])
-    timetables = fetch_all_timetables(local_browser)
-    timetable = fetch_timetable(local_browser,
-            timetables[zone][(start, finish)][period])
+
+    data = timetable(zone=zone, start=start, finish=finish, period=period)
     with indent(2):
         puts('Station: ' + station)
         with indent(2):
-            for train, time in timetable.filter(station).dict[0].items():
+            for train, time in data.filter(station).dict[0].items():
                 if train and time:
                     puts('%s: %s' % (train, time))
