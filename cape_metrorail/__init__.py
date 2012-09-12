@@ -91,9 +91,17 @@ def fetch_timetable(browser, link):
                 values.append(value)
             timetable.append((title, values))
 
+    while len(timetable):
+        if 'TRAIN NO.' not in timetable[0][0]:
+            del timetable[0]
+        else:
+            break
+
     train_nums = timetable[0]
     data = Dataset()
     data.headers = train_nums[1]
+    if debug:
+        puts(repr(data.headers))
     for place, times in timetable[1:]:
         if debug:
             puts(repr((place, times)))
