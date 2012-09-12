@@ -1,3 +1,4 @@
+import datetime
 from collections import defaultdict
 import clint
 from clint.textui import puts, indent
@@ -79,6 +80,14 @@ def fetch_timetable(browser, link):
                 value = col.getText()
                 if value == '&nbsp;':
                     value = None
+                if isinstance(value, basestring) and ':' in value:
+                    try:
+                        time = value.strip().split(':')
+                        time = datetime.time(*[int(s) for s in time])
+                    except:
+                        pass
+                    else:
+                        value = time
                 values.append(value)
             timetable.append((title, values))
 
@@ -102,7 +111,8 @@ def fetch_timetable(browser, link):
 
 def timetable(zone, start, finish, period, browser=None, link=None):
     """
-    Return a timetable for the specified zone, start_station, end_station and period
+    Return a timetable for the specified zone, start_station, end_station and
+    period
 
     :param zone: String representing a rail area/zone
     :param start_station: String representing a departure station
@@ -110,30 +120,42 @@ def timetable(zone, start, finish, period, browser=None, link=None):
     :param browser: (optional) `Mechanize.browser` instance
     :param link: (optional) String representing a timetable HTML page
     """
-    if browser and link:
-        return fetch_timetable(browser, link)
-    else:
+    if browser is None:
         browser = mechanize.Browser()
+    if link is None:
         timetables = fetch_all_timetables(browser)
-        return fetch_timetable(browser, timetables[zone][(start,finish)][period])
+        link = timetables[zone][(start, finish)][period]
+    return fetch_timetable(browser, link)
 
 
 if __name__ == '__main__':
     if '--debug' in clint.args.grouped:
-        debug=True
-    zone = clint.args.grouped.get('--zone',['South'])[0]
-    start = clint.args.grouped.get('--from',['ST'])[0]
-    finish = clint.args.grouped.get('--to',['CT'])[0]
-    period = clint.args.grouped.get('--period',['MonFri'])[0]
-    station = clint.args.grouped.get('--station',['Fish Hoek'])[0]
-    puts('Zone: '+zone)
-    puts('Service line: %s to %s' % (area_nicename.get(start,start),area_nicename.get(finish,finish)))
-    puts('Time: '+period_nicename[period])
+        debug = True
+    zone = clint.args.grouped.get('--zone', ['South'])[0]
+    start = clint.args.grouped.get('--from', ['ST'])[0]
+    finish = clint.args.grouped.get('--to', ['CT'])[0]
+    period = clint.args.grouped.get('--period', ['MonFri'])[0]
+    station = clint.args.grouped.get('--station', ['Fish Hoek'])[0]
+    time_window = int(clint.args.grouped.get('--window', [60])[0])
+    puts('Zone: ' + zone)
+    puts('Service line: %s to %s' % (
+        area_nicename.get(start, start),
+        area_nicename.get(finish, finish)))
+    puts('Time: ' + period_nicename[period])
 
-    timetable_data = timetable(zone=zone, start=start, finish=finish, period=period)
+    data = timetable(zone=zone, start=start, finish=finish, period=period)
+    today = datetime.date.today().timetuple()[:3]
+    now = datetime.datetime.now()
     with indent(2):
         puts('Station: ' + station)
         with indent(2):
-            for train, time in timetable_data.filter(station).dict[0].items():
+            for train, time in data.filter(station).dict[0].items():
                 if train and time:
-                    puts('%s: %s' % (train, time))
+                    notes = ''
+                    time_tuple = today + (time.hour, time.minute)
+                    local_time = datetime.datetime(*time_tuple)
+                    if local_time > now:
+                        minutes = (local_time - now).seconds / 60
+                        if minutes < 60:
+                            notes = "* leaving in %s minutes" % minutes
+                    puts('%s: %s %s' % (train, time, notes))
