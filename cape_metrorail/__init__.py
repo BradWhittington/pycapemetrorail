@@ -100,25 +100,40 @@ def fetch_timetable(browser, link):
     return data
 
 
+def timetable(zone, start, finish, period, browser=None, link=None):
+    """
+    Return a timetable for the specified zone, start_station, end_station and period
+
+    :param zone: String representing a rail area/zone
+    :param start_station: String representing a departure station
+    :param finish_station: String represeting a arrival station
+    :param browser: (optional) `Mechanize.browser` instance
+    :param link: (optional) String representing a timetable HTML page
+    """
+    if browser and link:
+        return fetch_timetable(browser, link)
+    else:
+        browser = mechanize.Browser()
+        timetables = fetch_all_timetables(browser)
+        return fetch_timetable(browser, timetables[zone][(start,finish)][period])
+
+
 if __name__ == '__main__':
     if '--debug' in clint.args.grouped:
-        debug = True
-    zone = clint.args.grouped.get('--zone', ['South'])[0]
-    start = clint.args.grouped.get('--from', ['ST'])[0]
-    finish = clint.args.grouped.get('--to', ['CT'])[0]
-    period = clint.args.grouped.get('--period', ['MonFri'])[0]
-    station = clint.args.grouped.get('--station', ['Fish Hoek'])[0]
-    puts('Zone: ' + zone)
-    puts('Service line: %s to %s' % (
-        area_nicename.get(start, start),
-        area_nicename.get(finish, finish)))
-    puts('Time: ' + period_nicename[period])
-    timetables = fetch_all_timetables(local_browser)
-    timetable = fetch_timetable(local_browser,
-            timetables[zone][(start, finish)][period])
+        debug=True
+    zone = clint.args.grouped.get('--zone',['South'])[0]
+    start = clint.args.grouped.get('--from',['ST'])[0]
+    finish = clint.args.grouped.get('--to',['CT'])[0]
+    period = clint.args.grouped.get('--period',['MonFri'])[0]
+    station = clint.args.grouped.get('--station',['Fish Hoek'])[0]
+    puts('Zone: '+zone)
+    puts('Service line: %s to %s' % (area_nicename.get(start,start),area_nicename.get(finish,finish)))
+    puts('Time: '+period_nicename[period])
+
+    timetable_data = timetable(zone=zone, start=start, finish=finish, period=period)
     with indent(2):
         puts('Station: ' + station)
         with indent(2):
-            for train, time in timetable.filter(station).dict[0].items():
+            for train, time in timetable_data.filter(station).dict[0].items():
                 if train and time:
                     puts('%s: %s' % (train, time))
