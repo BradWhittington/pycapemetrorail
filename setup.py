@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 import os
 import platform
 
-DESCRIPTION = "Library to access and parse Cape Metro Rail train schedules"
+DESCRIPTION = 'Library to access and parse Cape Metro Rail train schedules'
 
 LONG_DESCRIPTION = None
 try:
@@ -32,10 +32,10 @@ setup(
     platforms=['any'],
     classifiers=CLASSIFIERS,
     install_requires=[
-        "mechanize==0.2.5",
-        "clint",
-        "BeautifulSoup==3.2.1",
-        "tablib",
+        'mechanize==0.2.5',
+        'clint',
+        'BeautifulSoup==3.2.1',
+        'tablib',
     ],
 )
 

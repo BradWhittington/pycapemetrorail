@@ -8,21 +8,21 @@ from tablib import Dataset
 
 debug = False
 local_browser = mechanize.Browser()
-base_url = "http://www.capemetrorail.co.za/"
+base_url = 'http://www.capemetrorail.co.za/'
 area_nicename = {
-    "ST": "Simonstown",
-    "CT": "Cape Town",
-    "STR": "Strand",
-    "WOR": "Worchester",
-    "KYL": "Khayelitsha",
-    "MV": "Bellville",
-    "CF": "Retreat",
+    'ST': 'Simonstown',
+    'CT': 'Cape Town',
+    'STR': 'Strand',
+    'WOR': 'Worchester',
+    'KYL': 'Khayelitsha',
+    'MV': 'Bellville',
+    'CF': 'Retreat',
 }
 period_nicename = {
-    "MonFri": "Monday to Friday",
-    "MonSun": "Monday to Sunday",
-    "Sun": "Sunday & public holidays",
-    "Sat": "Saturday",
+    'MonFri': 'Monday to Friday',
+    'MonSun': 'Monday to Sunday',
+    'Sun': 'Sunday & public holidays',
+    'Sat': 'Saturday',
 
 }
 
@@ -34,16 +34,16 @@ def sub_dict():
 def fetch_all_timetables(browser):
     # Fetch the homepage for capemetro, and click the Timetables link
     if debug:
-        puts("Fetching timetable links")
+        puts('Fetching timetable links')
     tables = defaultdict(sub_dict)
     browser.open(base_url)
-    browser.follow_link(text="Timetables")
+    browser.follow_link(text='Timetables')
 
     # Iterate over all the links on the timetable page and
     # get the URLs for timetables, using zone/start/end/period
     for link in browser.links():
         if 'html' in link.text and 'Business_Express' not in link.url:
-            (date, zone, title) = link.url.split('/')
+            _, date, zone, title = link.url.split('/')
             (start, end, period) = title.split('_')[:3]
             tables[zone][(start, end)][period] = link
 
@@ -53,19 +53,19 @@ def fetch_all_timetables(browser):
             puts(zone)
             with indent(2):
                 for direction, periods in directions.items():
-                    puts("From:%s, to:%s" % (
+                    puts('From:%s, to:%s' % (
                         area_nicename[direction[0]],
                         area_nicename[direction[1]]))
                     with indent(2):
                         for period, link in periods.items():
-                            puts("%s - %s" % (period_nicename[period], link))
+                            puts('%s - %s' % (period_nicename[period], link))
     return tables
 
 
 def fetch_timetable(browser, link):
     # Utility method to return a nice Dataset from a timetable url
     if debug:
-        puts("Fetching timetable from %s" % link)
+        puts('Fetching timetable from %s' % link)
     response = browser.follow_link(link)
     soup = BeautifulSoup(response.read())
     table = soup.find('table')
@@ -136,7 +136,7 @@ def timetable(zone, start, finish, period, browser=None, link=None):
     return fetch_timetable(browser, link)
 
 
-if __name__ == '__main__':
+def main():
     if '--debug' in clint.args.grouped:
         debug = True
     zone = clint.args.grouped.get('--zone', ['South'])[0]
@@ -165,5 +165,8 @@ if __name__ == '__main__':
                     if local_time > now:
                         minutes = (local_time - now).seconds / 60
                         if minutes < 60:
-                            notes = "* leaving in %s minutes" % minutes
+                            notes = '* leaving in %s minutes' % minutes
                     puts('%s: %s %s' % (train, time, notes))
+
+if __name__ == '__main__':
+    main()
