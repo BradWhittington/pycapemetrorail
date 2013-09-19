@@ -136,7 +136,7 @@ def timetable(zone, start, finish, period, browser=None, link=None):
     return fetch_timetable(browser, link)
 
 
-if __name__ == '__main__':
+def main():
     if '--debug' in clint.args.grouped:
         debug = True
     zone = clint.args.grouped.get('--zone', ['South'])[0]
@@ -167,3 +167,6 @@ if __name__ == '__main__':
                         if minutes < 60:
                             notes = "* leaving in %s minutes" % minutes
                     puts('%s: %s %s' % (train, time, notes))
+
+if __name__ == '__main__':
+    main()
