@@ -43,7 +43,7 @@ def fetch_all_timetables(browser):
     # get the URLs for timetables, using zone/start/end/period
     for link in browser.links():
         if 'html' in link.text and 'Business_Express' not in link.url:
-            (date, zone, title) = link.url.split('/')
+            _, date, zone, title = link.url.split('/')
             (start, end, period) = title.split('_')[:3]
             tables[zone][(start, end)][period] = link
 
